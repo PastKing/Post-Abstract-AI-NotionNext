@@ -96,25 +96,9 @@ function ChucklePostAI(AI_option) {
     }
   }
 
-  function findMainArticleContainer() {
-    const containers = document.querySelectorAll('#notion-article');
-    if (containers.length === 0) return null;
-    if (containers.length === 1) return containers[0];
-
-    // 如果有多个容器，选择内容最长的那个
-    let mainContainer = containers[0];
-    let maxLength = mainContainer.innerText.length;
-
-    for (let i = 1; i < containers.length; i++) {
-      const length = containers[i].innerText.length;
-      if (length > maxLength) {
-        maxLength = length;
-        mainContainer = containers[i];
-      }
+    function findMainArticleContainer() {
+        return document.querySelector('#article-wrapper #notion-article');
     }
-
-    return mainContainer;
-  }
 
   var chucklePostAI = {
     getTitleAndContent: function() {
@@ -151,7 +135,7 @@ function ChucklePostAI(AI_option) {
     fetchAISummary: async function(content) {
       const url = window.location.href;
       const title = document.title;
-      
+
       try {
         const response = await fetch('替换成你自己的后端接口', {
           method: "POST",
@@ -233,7 +217,7 @@ function ChucklePostAI(AI_option) {
   }
 
   function runChucklePostAI() {
-    if (window.location.pathname.includes('posts')) {
+    if (isArticlePage()) {
       const mainContainer = findMainArticleContainer();
       if (mainContainer) {
         insertAIDiv('#' + mainContainer.id);
@@ -260,21 +244,26 @@ function ChucklePostAI(AI_option) {
   }
 
   // 初始化时检查URL
-  if (window.location.pathname.includes('posts')) {
+  if (isArticlePage()) {
     initChucklePostAI();
   }
 
-  // 监听URL变化并自动刷新
-  let lastUrl = location.href; 
-  new MutationObserver(() => {
-  const url = location.href;
-    if (url !== lastUrl) {
-      lastUrl = url;
-      if (window.location.pathname.includes('posts')) {
-        location.reload(); // 页面刷新
-      }
+    function isArticlePage() {
+        const pathsToCheck = ['posts', 'article'];
+        return pathsToCheck.some(path => window.location.pathname.includes(path))
     }
-  }).observe(document, {subtree: true, childList: true});
+
+    // 监听URL变化并自动刷新，忽略#hash避免目录跳转导致刷新的问题
+    let lastUrl = new URL(location.href).pathname + new URL(location.href).search;
+    new MutationObserver(() => {
+        const url = new URL(location.href).pathname + new URL(location.href).search;
+        if (url !== lastUrl) {
+            lastUrl = url;
+            if (isArticlePage()) {
+                location.reload(); // 页面刷新
+            }
+        }
+    }).observe(document, {subtree: true, childList: true});
 }
 
 // 使用示例
